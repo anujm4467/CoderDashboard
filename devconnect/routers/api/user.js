@@ -1,4 +1,5 @@
 /** @format */
+// User Route
 
 // Load input validation
 const validatorRegisterInput = require("../../validations/register");
