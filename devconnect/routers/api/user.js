@@ -39,7 +39,7 @@ route.post("/register", (req, res) => {
   const { errors, isValid } = validatorRegisterInput(req.body);
 
   if (!isValid) {
-    res.status(400).json(errors);
+    return res.status(400).json(errors);
   }
 
   // checking wheather user already exist or not
