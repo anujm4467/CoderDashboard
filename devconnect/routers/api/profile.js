@@ -4,17 +4,69 @@
 
 const express = require("express");
 const route = express.Router();
+
+// Load Validation
 const validatorProfileInput = require("../../validations/profile");
+const validatorExperianceInput = require('../../validations/experiance');
+const validatorEducationInput = require('../../validations/eduction')
 
 // Models
 const User = require("../../models/User");
 const Profile = require("../../models/Profile");
 const passport = require("passport");
 
-route.get("/test", (req, res) => {
-  res.json({
-    msg: "hii i am in profile"
-  });
+// @ ROUTE GET /api/profile/handle/:handle
+// @ DESC       get profile by handle
+// @ ACCESS     public
+
+route.get("/handle/:handle", (req, res) => {
+  const errors = {};
+  Profile.findOne({ handle: req.params.handle })
+    .populate("user", ["name", "avatar"])
+    .then(profile => {
+      if (!profile) {
+        errors.noProfile = "There is no profile";
+        res.status(404).json(errors);
+      }
+      res.json(profile);
+    })
+    .catch(err => console.log(err));
+});
+
+// @ ROUTE GET /api/profile/user/:user_id
+// @ DESC       get profile by user id
+// @ ACCESS     public
+
+route.get("/user/:user_id", (req, res) => {
+  const errors = {};
+  Profile.findOne({ user: req.params.user_id })
+    .populate("user", ["name", "avatar"])
+    .then(profile => {
+      if (!profile) {
+        errors.noProfile = "There is no profile";
+        res.status(404).json(errors);
+      }
+      res.json(profile);
+    })
+    .catch(err => res.status(404).json({ errors: "there is no profile" }));
+});
+
+// @ ROUTE GET /api/profile/all
+// @ DESC       get all profile
+// @ ACCESS     public
+
+route.get("/all", (req, res) => {
+  const errors = {};
+  Profile.find()
+    .populate("user", ["name", "avatar"])
+    .then(profile => {
+      if (!profile) {
+        errors.noprofile = "there is no profile";
+        res.status(404).json(errors);
+      }
+      res.json(profile);
+    })
+    .catch(error => res.status(404).json("there is no profile"));
 });
 
 // @ ROUTE GET /api/profile/
@@ -131,6 +183,78 @@ route.post(
           })
           .catch(error => console.log(error));
       }
+    });
+  }
+);
+
+// @ ROUTE POST  /api/experiance/
+// @ DESC       set experiance
+// @ ACCESS     private
+
+route.post(
+  "/experiance",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+
+    // importing all validation
+    // applying to current user
+    const { errors, isValid } = validatorExperianceInput(req.body);
+
+    // check validation
+    if (!isValid) {
+      return res.status(400).json(errors);
+    }
+
+    Profile.findOne({ user: req.user.id }).then(profile => {
+      const newExp = {
+        title: req.body.title,
+        company: req.body.company,
+        location: req.body.location,
+        from: req.body.from,
+        to: req.body.to,
+        current: req.body.current,
+        description: req.body.description
+      };
+
+      profile.experiance.unshift(newExp);
+      profile.save().then(profile => res.json(profile));
+    });
+  }
+);
+
+
+
+// @ ROUTE POST  /api/education/
+// @ DESC       set education
+// @ ACCESS     private
+
+route.post(
+  "/education",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+
+    // importing all validation
+    // applying to current user
+    const { errors, isValid } = validatorEducationInput(req.body);
+
+    // check validation
+    if (!isValid) {
+      return res.status(400).json(errors);
+    }
+
+    Profile.findOne({ user: req.user.id }).then(profile => {
+      const newExp = {
+        school: req.body.school,
+        degree: req.body.degree,
+        fieldofstudy: req.body.fieldofstudy,
+        from: req.body.from,
+        to: req.body.to,
+        current: req.body.current,
+        description: req.body.description
+      };
+
+      profile.education.unshift(newExp);
+      profile.save().then(profile => res.json(profile));
     });
   }
 );
